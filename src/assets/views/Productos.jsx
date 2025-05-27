@@ -14,6 +14,7 @@ import TablaProductos from "../components/productos/TablaProductos";
 import ModalRegistroProducto from "../components/productos/ModalRegistroProducto";
 import ModalEdicionProducto from "../components/productos/ModalEdicionProducto";
 import ModalEliminacionProducto from "../components/productos/ModalEliminacionProducto";
+import Paginacion from "../components/ordenamiento/Paginacion";
 
 const Productos = () => {
   // Estados para manejo de datos
@@ -30,6 +31,9 @@ const Productos = () => {
   });
   const [productoEditado, setProductoEditado] = useState(null);
   const [productoAEliminar, setProductoAEliminar] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1); // Página actual
+  const itemsPerPage = 5; // Cambia este valor según cuántos productos quieras por página
+
 
   // Referencia a las colecciones en Firestore
   const productosCollection = collection(db, "productos");
@@ -156,6 +160,11 @@ const Productos = () => {
     setShowDeleteModal(true);
   };
 
+  const paginatedProductos = productos.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // Renderizado del componente
   return (
     <Container className="mt-5">
@@ -168,6 +177,15 @@ const Productos = () => {
         productos={productos}
         openEditModal={openEditModal}
         openDeleteModal={openDeleteModal}
+        itemsPerPage={itemsPerPage}   // Elementos por página
+        currentPage={currentPage}     // Página actual
+        setCurrentPage={setCurrentPage} // Método para cambiar página
+      />
+      <Paginacion
+        itemsPerPage={itemsPerPage}
+        totalItems={productos.length}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
       />
       <ModalRegistroProducto
         showModal={showModal}
