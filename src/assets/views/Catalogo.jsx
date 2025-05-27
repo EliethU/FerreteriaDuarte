@@ -3,11 +3,15 @@ import { Container, Row, Form, Col } from "react-bootstrap";
 import { db } from "../database/firebaseconfig";
 import { collection, getDocs } from "firebase/firestore";
 import TarjetaProducto from "../components/catalogo/TarjetaProducto";
+import CuadrodeBusqueda from "../components/busqueda/CuadroBusqueda";
+import { FaSearch } from "react-icons/fa";
+
 
 const Catalogo= () => {
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todas");
+  const [busqueda, setBusqueda] = useState("");
 
   const productosCollection = collection(db, "productos");
   const categoriasCollection = collection(db, "categorias");
@@ -38,10 +42,14 @@ const Catalogo= () => {
     fetchData();
   }, []);
 
-  // Filtrar productos por categoría
-  const productosFiltrados = categoriaSeleccionada === "Todas"
-    ? productos
-    : productos.filter((producto) => producto.categoria === categoriaSeleccionada);
+  // 🔍 Filtrado por categoría y búsqueda
+  const productosFiltrados = productos.filter((producto) => {
+    const coincideCategoria = categoriaSeleccionada === "Todas" || producto.categoria === categoriaSeleccionada;
+    const coincideBusqueda =
+      producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      producto.categoria.toLowerCase().includes(busqueda.toLowerCase());
+    return coincideCategoria && coincideBusqueda;
+  });
 
   return (
     <Container className="mt-5">
@@ -64,6 +72,12 @@ const Catalogo= () => {
               ))}
             </Form.Select>
           </Form.Group>
+        </Col>
+        <Col lg={4} md={6} sm={12}>
+            <Form.Label>
+            <FaSearch className="me-2" /> {/* Ícono de búsqueda */}
+            </Form.Label>
+          <CuadrodeBusqueda valorBusqueda={busqueda} onCambio={setBusqueda} />
         </Col>
       </Row>
 
