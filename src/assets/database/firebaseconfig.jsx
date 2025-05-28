@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -20,7 +21,21 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const appfirebase = initializeApp(firebaseConfig);
-const db = getFirestore(appfirebase);
+
+let db;
+try {
+  db = initializeFirestore(appfirebase, {
+    localCache: persistentLocalCache({
+      cacheSizeBytes: 100 * 1024 * 1024, // 100 MB (opcional, para limitar tamaño)
+    }),
+  });
+  console.log("Firestore inicializado con persistencia offline.");
+} catch (error) {
+  console.error("Error al inicializar Firestore con persistencia:", error);
+  // Fallback: inicializar sin persistencia si falla
+  db = initializeFirestore(appfirebase, {});
+}
+
 const auth = getAuth(appfirebase);
 
 
