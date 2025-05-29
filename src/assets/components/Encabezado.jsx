@@ -4,9 +4,12 @@ import Container from "react-bootstrap/Container";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import Offcanvas from "react-bootstrap/Offcanvas";
+import NavDropdown from "react-bootstrap/NavDropdown";
 import logo from "../../assets/react.svg";
 import { useAuth } from "../database/authcontext";
 import 'bootstrap-icons/font/bootstrap-icons.css';
+
+import { useTranslation } from 'react-i18next';
 
 import '../../../src/App.css';
 
@@ -43,6 +46,13 @@ const Encabezado = () => {
     setIsCollapsed(false);
   };
 
+  //método para cambiar el idioma
+  const { t, i18n } = useTranslation();
+
+  const cambiarIdioma = (lang) => {
+    i18n.changeLanguage(lang);
+  }
+
   return (
     <Navbar expand="sm" fixed="top" className="color-navbar">
       <Container>
@@ -74,7 +84,7 @@ const Encabezado = () => {
                 className={isCollapsed ? "color-texto-marca" : "text-white"}
               >
                 {isCollapsed ? <i className="bi-house-door-fill me-2"></i> : null}
-                <strong>Inicio</strong>
+                <Nav.Link>{t('menu.inicio')}</Nav.Link>
               </Nav.Link>
 
               <Nav.Link
@@ -82,7 +92,7 @@ const Encabezado = () => {
                 className={isCollapsed ? "color-texto-marca" : "text-white"}
               >
                 {isCollapsed ? <i className="bi-house-door-fill me-2"></i> : null}
-                <strong>Categorias</strong>
+                <Nav.Link>{t('menu.categorias')}</Nav.Link>
               </Nav.Link>
 
               <Nav.Link
@@ -90,7 +100,7 @@ const Encabezado = () => {
                 className={isCollapsed ? "color-texto-marca" : "text-white"}
               >
                 {isCollapsed ? <i className="bi-house-door-fill me-2"></i> : null}
-                <strong>Productos</strong>
+                <Nav.Link>{t('menu.productos')}</Nav.Link>
               </Nav.Link>
 
               <Nav.Link
@@ -98,7 +108,7 @@ const Encabezado = () => {
                 className={isCollapsed ? "color-texto-marca" : "text-white"}
               >
                 {isCollapsed ? <i className="bi-house-door-fill me-2"></i> : null}
-                <strong>Catalogo</strong>
+                <Nav.Link>{t('menu.catalogo')}</Nav.Link>
               </Nav.Link>
 
               <Nav.Link
@@ -106,7 +116,7 @@ const Encabezado = () => {
                 className={isCollapsed ? "color-texto-marca" : "text-white"}
               >
                 {isCollapsed ? <i className="bi-cloud-sun-fill me-2"></i> : null}
-                <strong>Clima</strong>
+                <Nav.Link>{t('menu.clima')}</Nav.Link>
 
               </Nav.Link>
 
@@ -115,7 +125,7 @@ const Encabezado = () => {
                 className={isCollapsed ? "color-texto-marca" : "text-white"}
               >
                 {isCollapsed ? <i className="bi-cloud-sun-fill me-2"></i> : null}
-                <strong>Pronunciacion</strong>
+                <Nav.Link>{t('menu.pronunciacion')}</Nav.Link>
 
               </Nav.Link>
 
@@ -124,14 +134,14 @@ const Encabezado = () => {
                 className={isCollapsed ? "color-texto-marca" : "text-white"}
               >
                 {isCollapsed ? <i className="bi-cloud-sun-fill me-2"></i> : null}
-                <strong>Estadisticas</strong>
+                <Nav.Link>{t('menu.estadisticas')}</Nav.Link>
 
               </Nav.Link>
 
               {isLoggedIn ? (
                 <>
                   <Nav.Link onClick={handleLogout} className={isCollapsed ? "text-black" : "text-white"}>
-                    Cerrar Sesión
+                    <Nav.Link>{t('menu.cerrarSesion')}</Nav.Link>
                   </Nav.Link>
                 </>
               ) : location.pathname === "/" && (
@@ -139,9 +149,35 @@ const Encabezado = () => {
                   onClick={() => handleNavigate("/")}
                   className={isCollapsed ? "text-black" : "text-white"}
                 >
-                  Iniciar Sesión
+                  <Nav.Link>{t('menu.iniciarSesion')}</Nav.Link>
                 </Nav.Link>
               )}
+
+              <NavDropdown 
+                title={
+                  <span>
+                    <i className="bi-translate me-2"></i>
+                    {isCollapsed && <span>{t('menu.idioma')}</span>}
+                  </span>
+                }
+                  id="basic-nav-dropdown"
+                  className={isCollapsed ? "color-texto-marca":"texto-blanco"}
+                >
+                <NavDropdown.Item
+                  onClick={() => cambiarIdioma ('es')}
+                  className="text-black"
+                >
+                  <strong>{t('menu.español')}</strong>
+                </NavDropdown.Item>
+
+                <NavDropdown.Item
+                  onClick={() => cambiarIdioma ('en')}
+                  className="text-black"
+                >
+                  <strong>{t('menu.ingles')}</strong>
+                </NavDropdown.Item>
+
+              </NavDropdown>
 
             </Nav>
           </Offcanvas.Body>
