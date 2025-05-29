@@ -176,7 +176,7 @@ const Encabezado = () => {
                 >
                   <strong>{t('menu.ingles')}</strong>
                 </NavDropdown.Item>
-
+                
               </NavDropdown>
 
             </Nav>
