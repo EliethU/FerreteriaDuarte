@@ -110,7 +110,7 @@ const Encabezado = () => {
                 {isCollapsed ? <i className="bi-house-door-fill me-2"></i> : null}
                 <Nav.Link>{t('menu.catalogo')}</Nav.Link>
               </Nav.Link>
-
+              
               <Nav.Link
                 onClick={() => handleNavigate("/clima")}
                 className={isCollapsed ? "color-texto-marca" : "text-white"}

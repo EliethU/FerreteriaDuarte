@@ -150,24 +150,12 @@ const Productos = () => {
 
   // Método para copiar datos de una fila al portapapeles
   const handleCopy = (producto) => {
-    if (!producto || (!producto.nombre && !producto.precio && !producto.categoria)) {
-      setToastMsg("No hay datos para copiar.");
-      setShowToast(true);
-      return;
-    }
-    const rowData = `Nombre: ${producto.nombre}\nPrecio: C$${producto.precio}\nCategoría: ${producto.categoria}`;
-    navigator.clipboard
-      .writeText(rowData)
-      .then(() => {
-        setToastMsg("¡Datos copiados al portapapeles!");
-        setShowToast(true);
-      })
-      .catch((err) => {
-        setToastMsg("Error al copiar al portapapeles");
-        setShowToast(true);
-        console.error("Error al copiar al portapapeles:", err);
-      });
-  };
+  const texto = `Nombre: ${producto.nombre}, Precio: C$${producto.precio}, Categoría: ${producto.categoria}`;
+  navigator.clipboard.writeText(texto)
+    .then(() => alert("Producto copiado al portapapeles"))
+    .catch((err) => alert("Error al copiar"));
+};
+
 
   // Función para abrir el modal de edición con datos prellenados
   const openEditModal = (producto) => {
