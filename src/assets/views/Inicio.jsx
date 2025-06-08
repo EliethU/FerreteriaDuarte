@@ -1,24 +1,35 @@
 import { useNavigate } from "react-router-dom";
 
 const Inicio = () => {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
-
-    // Función de navegación
-    const handleNavigate = (path) => {
-      navigate(path);
-    };
+  const handleNavigate = (path) => {
+    navigate(path);
+  };
 
   return (
-    <div>
-      <br />
-      <br />
+    <div className="margen-superior-main">
       <h1>Inicio</h1>
-      <button onClick={() => handleNavigate("/categorias")} >Ir a Categorias</button>
-      <button onClick={() => handleNavigate("/productos")} >Ir a Productos</button>
-      <button onClick={() => handleNavigate("/catalogo")} >Ir a Catalogo</button>
+      <button
+        className="boton-inicio"
+        onClick={() => handleNavigate("/categorias")}
+      >
+        Ir a Categorías
+      </button>
+      <button
+        className="boton-inicio"
+        onClick={() => handleNavigate("/productos")}
+      >
+        Ir a Productos
+      </button>
+      <button
+        className="boton-inicio"
+        onClick={() => handleNavigate("/catalogo")}
+      >
+        Ir a Catálogo
+      </button>
     </div>
-  )
-}
+  );
+};
 
 export default Inicio;
