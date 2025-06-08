@@ -1,7 +1,7 @@
 // src/views/Estadisticas.jsx
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Spinner } from "react-bootstrap";
-import { db } from "../database/firebaseConfig";
+import { db } from "../database/firebaseconfig";
 import { collection, getDocs } from "firebase/firestore";
 import GraficoProductos from "../components/estadisticas/GraficoProducto";
 
