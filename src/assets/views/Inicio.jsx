@@ -1,104 +1,163 @@
-// Importaciones CORRECTAS:
-import { useState, useEffect } from "react"; // Los hooks de React vienen de aquí
-import { useNavigate } from "react-router-dom"; // useNavigate sí viene de react-router-dom
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import ModalInstalacionIOS from "../components/inicio/ModalInstalacionIOS";
 
 const Inicio = () => {
   const navigate = useNavigate();
+  const deferredPrompt = useRef(null);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
 
+  // Detección mejorada de dispositivos iOS
+  const [esDispositivoIOS, setEsDispositivoIOS] = useState(false);
+  const [pwaInstallable, setPwaInstallable] = useState(false);
+
+  // Navegación
   const handleNavigate = (path) => {
     navigate(path);
   };
 
-  // Estados correctamente importados desde react
-  const [solicitudInstalacion, setSolicitudInstalacion] = useState(null);
-  const [mostrarBotonInstalacion, setMostrarBotonInstalacion] = useState(false);
-  const [esDispositivoIOS, setEsDispositivoIOS] = useState(false);
-  const [mostrarModalInstrucciones, setMostrarModalInstrucciones] = useState(false);
-
+  // Efecto para detectar iOS y capacidades PWA
   useEffect(() => {
-    const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    setEsDispositivoIOS(esIOS);
-  }, []);
-
-  useEffect(() => {
-    const manejarSolicitudInstalacion = (evento) => {
-      evento.preventDefault();
-      setSolicitudInstalacion(evento);
-      setMostrarBotonInstalacion(true);
+    // Detección mejorada de iOS
+    const isIOS = () => {
+      return [
+        'iPad Simulator',
+        'iPhone Simulator',
+        'iPod Simulator',
+        'iPad',
+        'iPhone',
+        'iPod'
+      ].includes(navigator.platform) ||
+      (navigator.userAgent.includes("Mac") && "ontouchend" in document);
     };
 
-    window.addEventListener("beforeinstallprompt", manejarSolicitudInstalacion);
+    setEsDispositivoIOS(isIOS());
+
+    // Manejar el evento de instalación PWA
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      deferredPrompt.current = e;
+      setPwaInstallable(true);
+    };
+
+    // Verificar si la app ya está instalada
+    const checkIfInstalled = () => {
+      const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
+                        window.navigator.standalone ||
+                        document.referrer.includes('android-app://');
+      setIsAppInstalled(isInstalled);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', () => setIsAppInstalled(true));
+    
+    checkIfInstalled();
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", manejarSolicitudInstalacion);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', () => setIsAppInstalled(true));
     };
   }, []);
 
-  const instalacion = async () => {
-    if (!solicitudInstalacion) return;
+  // Manejo de instalación PWA
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt.current) {
+      console.log("El evento de instalación no está disponible");
+      return;
+    }
 
     try {
-      await solicitudInstalacion.prompt();
-      const outcome = await solicitudInstalacion.userChoice;
-      console.log(outcome === "accepted" ? "Instalación aceptada" : "Instalación rechazada");
+      deferredPrompt.current.prompt();
+      const { outcome } = await deferredPrompt.current.userChoice;
+      
+      if (outcome === 'accepted') {
+        console.log('Usuario aceptó la instalación');
+        setPwaInstallable(false);
+      } else {
+        console.log('Usuario rechazó la instalación');
+      }
     } catch (error) {
-      console.error("Error al intentar instalar la PWA:", error);
+      console.error('Error al instalar:', error);
     } finally {
-      setSolicitudInstalacion(null);
-      setMostrarBotonInstalacion(false);
+      deferredPrompt.current = null;
     }
   };
 
-  const abrirModalInstrucciones = () => setMostrarModalInstrucciones(true);
-  const cerrarModalInstrucciones = () => setMostrarModalInstrucciones(false);
+  // Modal para iOS
+  const [mostrarModalInstrucciones, setMostrarModalInstrucciones] = useState(false);
+  const toggleModalInstrucciones = () => setMostrarModalInstrucciones(!mostrarModalInstrucciones);
 
   return (
     <div className="margen-superior-main">
-      <h1>Inicio</h1>
-      <button
-        className="boton-inicio"
-        onClick={() => handleNavigate("/categorias")}
-      >
-        Ir a Categorías
-      </button>
-      <button
-        className="boton-inicio"
-        onClick={() => handleNavigate("/productos")}
-      >
-        Ir a Productos
-      </button>
-      <button
-        className="boton-inicio"
-        onClick={() => handleNavigate("/catalogo")}
-      >
-        Ir a Catálogo
-      </button>
+      <h1 className="mb-4">Inicio</h1>
+      
+      <div className="d-flex flex-column gap-3 mb-4">
+        <button
+          className="boton-inicio"
+          onClick={() => handleNavigate("/categorias")}
+        >
+          Ir a Categorías
+        </button>
+        <button
+          className="boton-inicio"
+          onClick={() => handleNavigate("/productos")}
+        >
+          Ir a Productos
+        </button>
+        <button
+          className="boton-inicio"
+          onClick={() => handleNavigate("/catalogo")}
+        >
+          Ir a Catálogo
+        </button>
+      </div>
 
-      {/* Botón para instalar en Android / navegadores compatibles */}
-      {!esDispositivoIOS && mostrarBotonInstalacion && (
-        <div className="my-4">
-          <Button className="sombra" variant="primary" onClick={instalacion}>
-            Instalar app Ferretería Selva <i className="bi bi-download"></i>
-          </Button>
-        </div>
-      )}
+      {/* Sección de instalación PWA */}
+      <div className="mt-5">
+        {/* Para dispositivos no iOS con soporte PWA */}
+        {!esDispositivoIOS && pwaInstallable && !isAppInstalled && (
+          <div className="text-center">
+            <Button 
+              variant="primary" 
+              onClick={handleInstallPWA}
+              className="shadow-sm"
+            >
+              <i className="bi bi-download me-2"></i>
+              Instalar App Ferretería Duarte
+            </Button>
+            <p className="text-muted small mt-2">
+              Instala esta aplicación en tu dispositivo para un acceso más rápido
+            </p>
+          </div>
+        )}
 
-      {/* Botón para mostrar instrucciones de instalación en iOS */}
-      {esDispositivoIOS && (
-        <div className="text-center my-4">
-          <Button className="sombra" variant="primary" onClick={abrirModalInstrucciones}>
-            Cómo instalar Ferretería Selva en iPhone <i className="bi bi-phone"></i>
-          </Button>
-        </div>
-      )}
+        {/* Para dispositivos iOS */}
+        {esDispositivoIOS && !isAppInstalled && (
+          <div className="text-center">
+            <Button 
+              variant="info" 
+              onClick={toggleModalInstrucciones}
+              className="shadow-sm"
+            >
+              <i className="bi bi-phone me-2"></i>
+              Cómo instalar en iPhone/iPad
+            </Button>
+            <ModalInstalacionIOS
+              mostrar={mostrarModalInstrucciones}
+              cerrar={toggleModalInstrucciones}
+            />
+          </div>
+        )}
 
-      {/* Modal de instrucciones para iOS */}
-      <ModalInstalacionIOS
-        mostrar={mostrarModalInstrucciones}
-        cerrar={cerrarModalInstrucciones}
-      />
+        {/* Mensaje si ya está instalado */}
+        {isAppInstalled && (
+          <div className="alert alert-success text-center">
+            <i className="bi bi-check-circle-fill me-2"></i>
+            La aplicación está instalada en tu dispositivo
+          </div>
+        )}
+      </div>
     </div>
   );
 };
