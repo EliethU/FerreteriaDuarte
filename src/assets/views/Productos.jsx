@@ -1,6 +1,6 @@
 // Importaciones
 import React, { useState, useEffect } from "react";
-import { Container, Button } from "react-bootstrap";
+import { Container, Button, Col } from "react-bootstrap";
 import { db } from "../database/firebaseconfig";
 import {
   collection,
@@ -10,6 +10,10 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import TablaProductos from "../components/productos/TablaProductos";
 import ModalRegistroProducto from "../components/productos/ModalRegistroProducto";
 import ModalEdicionProducto from "../components/productos/ModalEdicionProducto";
@@ -31,9 +35,8 @@ const Productos = () => {
   });
   const [productoEditado, setProductoEditado] = useState(null);
   const [productoAEliminar, setProductoAEliminar] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // Página actual
-  const itemsPerPage = 5; // Cambia este valor según cuántos productos quieras por página
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Referencia a las colecciones en Firestore
   const productosCollection = collection(db, "productos");
@@ -150,12 +153,11 @@ const Productos = () => {
 
   // Método para copiar datos de una fila al portapapeles
   const handleCopy = (producto) => {
-  const texto = `Nombre: ${producto.nombre}, Precio: C$${producto.precio}, Categoría: ${producto.categoria}`;
-  navigator.clipboard.writeText(texto)
-    .then(() => alert("Producto copiado al portapapeles"))
-    .catch((err) => alert("Error al copiar"));
-};
-
+    const texto = `Nombre: ${producto.nombre}, Precio: C$${producto.precio}, Categoría: ${producto.categoria}`;
+    navigator.clipboard.writeText(texto)
+      .then(() => alert("Producto copiado al portapapeles"))
+      .catch((err) => alert("Error al copiar"));
+  };
 
   // Función para abrir el modal de edición con datos prellenados
   const openEditModal = (producto) => {
@@ -174,29 +176,152 @@ const Productos = () => {
     currentPage * itemsPerPage
   );
 
+  // Generar PDF
+ // Método para generar PDF CORREGIDO
+const generarPDFProductos = () => {
+  // Crear documento
+  const doc = new jsPDF();
+  
+  // Configurar encabezado con rectángulo y título
+  doc.setFillColor(28, 41, 51);
+  doc.rect(0, 0, doc.internal.pageSize.getWidth(), 30, 'F');
+  
+  // Título centrado con texto blanco
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(28);
+  doc.text(
+    "Lista de Productos", 
+    doc.internal.pageSize.getWidth() / 2, 
+    18, 
+    { align: "center" }
+  );
+
+  // Definir columnas y filas
+  const columns = ["#", "Nombre", "Precio", "Categoría"];
+  const rows = productos.map((producto, index) => [
+    index + 1,
+    producto.nombre,
+    `C$ ${producto.precio}`,
+    producto.categoria,
+  ]);
+
+  // Configuración de la tabla
+  autoTable(doc, {
+    head: [columns],
+    body: rows,
+    startY: 48,
+    theme: 'grid',
+    styles: { 
+      fontSize: 10, 
+      cellPadding: 2,
+      textColor: [0, 0, 0] // Color negro para el texto
+    },
+    headStyles: {
+      fillColor: [28, 41, 51], // Mismo color que el encabezado
+      textColor: [255, 255, 255] // Texto blanco en encabezado
+    },
+    margin: { top: 20, left: 14, right: 16 },
+    tableWidth: 'auto',
+    columnStyles: {
+      0: { cellWidth: 'auto' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 'auto' },
+      3: { cellWidth: 'auto' }
+    },
+    didDrawPage: function (data) {
+      // Pie de página con número de página
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(
+        `Página ${data.pageNumber} de ${pageCount}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "center" }
+      );
+    }
+  });
+
+  // Guardar PDF con nombre basado en fecha
+  const fecha = new Date();
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const anio = fecha.getFullYear();
+  const nombreArchivo = `productos_${dia}${mes}${anio}.pdf`;
+
+  doc.save(nombreArchivo);
+};
+
+  // Generar Excel
+  const exportarExcelProductos = () => {
+    // Definir estructura de datos
+    const datos = [
+      ["#", "Nombre", "Precio", "Categoría"],
+      ...productos.map((producto, index) => [
+        index + 1,
+        producto.nombre,
+        `C$ ${producto.precio}`,
+        producto.categoria
+      ])
+    ];
+
+    // Crear hoja y libro
+    const hoja = XLSX.utils.aoa_to_sheet(datos);
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, "Productos");
+
+    // Generar archivo binario
+    const excelBuffer = XLSX.write(libro, { bookType: 'xlsx', type: 'array' });
+
+    // Configurar nombre basado en fecha
+    const fecha = new Date();
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    const nombreArchivo = `Productos_${dia}${mes}${anio}.xlsx`;
+
+    // Guardar archivo
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(blob, nombreArchivo);
+  };
+
   // Renderizado del componente
   return (
     <Container className="mt-5">
       <br />
       <h4>Gestión de Productos</h4>
-      <Button className="mb-3" onClick={() => setShowModal(true)}>
-        Agregar producto
-      </Button>
+      <div className="d-flex flex-wrap gap-3 mb-3">
+        <Button onClick={() => setShowModal(true)}>
+          Agregar producto
+        </Button>
+        <Button 
+          onClick={generarPDFProductos} 
+          variant="secondary"
+        >
+          Generar PDF
+        </Button>
+        <Button 
+          onClick={exportarExcelProductos} 
+          variant="success"
+        >
+          Generar Excel
+        </Button>
+      </div>
+      
       <TablaProductos
-        productos={productos}
+        productos={paginatedProductos}
         openEditModal={openEditModal}
         openDeleteModal={openDeleteModal}
-        itemsPerPage={itemsPerPage}   // Elementos por página
-        currentPage={currentPage}     // Página actual
-        setCurrentPage={setCurrentPage} // Método para cambiar página
         handleCopy={handleCopy}
       />
+      
       <Paginacion
         itemsPerPage={itemsPerPage}
         totalItems={productos.length}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
       />
+      
       <ModalRegistroProducto
         showModal={showModal}
         setShowModal={setShowModal}
@@ -206,6 +331,7 @@ const Productos = () => {
         handleAddProducto={handleAddProducto}
         categorias={categorias}
       />
+      
       <ModalEdicionProducto
         showEditModal={showEditModal}
         setShowEditModal={setShowEditModal}
@@ -215,6 +341,7 @@ const Productos = () => {
         handleEditProducto={handleEditProducto}
         categorias={categorias}
       />
+      
       <ModalEliminacionProducto
         showDeleteModal={showDeleteModal}
         setShowDeleteModal={setShowDeleteModal}
