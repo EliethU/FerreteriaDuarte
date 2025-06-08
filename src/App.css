@@ -20,15 +20,10 @@
   font-size: 1.4rem;
   text-transform: uppercase;
   background: linear-gradient(90deg, #021338, #36aaee);
-  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   transition: all 0.3s ease-in-out;
 }
 
-.texto-blanco .dropdown-toggle {
-  color: white !important;
-  font-weight: bold;
-}
 
 /* ===== MÁRGEN GENERAL PARA PÁGINAS ===== */
 .margen-superior-main {
