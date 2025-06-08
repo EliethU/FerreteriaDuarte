@@ -1,106 +1,120 @@
+// 1. Importaciones necesarias
 import React, { useEffect, useState } from "react";
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "../../database/firebaseconfig";
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { Button, Form, ListGroup, Spinner, Modal } from "react-bootstrap";
 
+// 2. Definición del componente principal
 const ChatIA = ({ showChatModal, setShowChatModal }) => {
+  // 3. Variables de estado
   const [mensaje, setMensaje] = useState("");
   const [mensajes, setMensajes] = useState([]);
   const [cargando, setCargando] = useState(false);
-  const chatCollection = collection(db, "chat");
+  const [intencion, setIntencion] = useState(null);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
 
+  // 4. Referencias a colecciones de Firebase
+  const chatCollection = collection(db, "chat");
+  const categoriasCollection = collection(db, "categorias");
+
+  // 5. Carga de mensajes en tiempo real
   useEffect(() => {
     const q = query(chatCollection, orderBy("timestamp", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMensajes(snapshot.docs.map((doc) => doc.data()));
+      const mensajesObtenidos = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setMensajes(mensajesObtenidos);
     });
+
     return () => unsubscribe();
   }, []);
 
-  const obtenerRespuestaIA = async (textoUsuario) => {
-  try {
-    const respuesta = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta3/models/chat-bison-001:generateMessage?key=" + import.meta.env.VITE_GOOGLE_AI_API_KEY,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "chat-bison-001",  // Especificamos el modelo
-          messages: [
-            { role: "user", content: textoUsuario }  // Establecemos el rol del mensaje
-          ],
-        }),
-      }
-    );
+  // 6. Obtener categorías desde Firebase
+  const obtenerCategorias = async () => {
+    const snapshot = await getDocs(categoriasCollection);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  };
 
-    // Verificar si la respuesta fue exitosa
-    if (!respuesta.ok) {
-      console.error("Error en la solicitud, código:", respuesta.status);
-      const errorDetails = await respuesta.text();
-      console.error("Detalles del error:", errorDetails);
-      return "Error al contactar la IA";
-    }
+  // 7. Obtener respuesta de IA desde la API Gemini
+  const obtenerRespuestaIA = async (promptUsuario) => {
+    const apiKey = import.meta.env.VITE_GOOGLE_AI_API_KEY;
+    const prompt = `
+      Analiza el mensaje del usuario: "${promptUsuario}".
+      Determina la intención del usuario respecto a operaciones con categorías...`;
+    // Aquí vendría la solicitud HTTP a la API de Gemini y su retorno
+    // return response.data;
+  };
 
-    const datos = await respuesta.json();
-    console.log("Respuesta de la API:", datos);
-
-    return datos.candidates?.[0]?.content || "No se obtuvo respuesta";
-  } catch (error) {
-    console.error("Error al contactar la IA:", error);
-    return "Error al contactar la IA";
-  }
-};
-
-
+  // 8. Función principal para enviar mensaje y procesar respuesta IA
   const enviarMensaje = async () => {
     if (!mensaje.trim()) return;
 
-    setCargando(true);
-
-    await addDoc(chatCollection, {
+    const nuevoMensaje = {
       texto: mensaje,
       emisor: "usuario",
-      timestamp: serverTimestamp(),
-    });
+      timestamp: new Date(),
+    };
 
-    const respuestaIA = await obtenerRespuestaIA(mensaje);
-
-    await addDoc(chatCollection, {
-      texto: respuestaIA,
-      emisor: "ia",
-      timestamp: serverTimestamp(),
-    });
-
+    setCargando(true);
     setMensaje("");
-    setCargando(false);
+
+    try {
+      await addDoc(chatCollection, nuevoMensaje);
+      const respuestaIA = await obtenerRespuestaIA(mensaje);
+      const categorias = await obtenerCategorias();
+
+      // [ ...lógica según la intención: listar, crear, eliminar, actualizar... ]
+
+    } catch (error) {
+      console.error("Error al enviar mensaje:", error);
+      await addDoc(chatCollection, {
+        texto: "Ocurrió un error. Intenta más tarde.",
+        emisor: "ia",
+        timestamp: new Date(),
+      });
+    } finally {
+      setCargando(false);
+    }
   };
 
+  // Renderizar UI (puedes completarlo con Modal, Formulario, etc.)
   return (
-    showChatModal && (
-      <div className="modal-overlay">
-        <div className="chat-modal">
-          <h2>Asistente Inteligente</h2>
-          <div className="mensajes">
-            {mensajes.map((m, i) => (
-              <div key={i} className={m.emisor === "usuario" ? "mensaje usuario" : "mensaje ia"}>
-                <strong>{m.emisor === "usuario" ? "Tú" : "IA"}:</strong> {m.texto}
-              </div>
-            ))}
-          </div>
-          <div className="entrada-mensaje">
-            <input
-              type="text"
-              value={mensaje}
-              onChange={(e) => setMensaje(e.target.value)}
-              placeholder="Escribe tu mensaje..."
-            />
-            <button onClick={enviarMensaje} disabled={cargando}>
-              {cargando ? "Enviando..." : "Enviar"}
-            </button>
-          </div>
-          <button onClick={() => setShowChatModal(false)}>Cerrar</button>
-        </div>
-      </div>
-    )
+    <Modal show={showChatModal} onHide={() => setShowChatModal(false)}>
+      <Modal.Header closeButton>
+        <Modal.Title>Asistente IA</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <ListGroup>
+          {mensajes.map((msg) => (
+            <ListGroup.Item key={msg.id} variant={msg.emisor === "ia" ? "light" : "primary"}>
+              <strong>{msg.emisor === "ia" ? "IA" : "Tú"}:</strong> {msg.texto}
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+        <Form.Control
+          type="text"
+          value={mensaje}
+          placeholder="Escribe tu mensaje..."
+          onChange={(e) => setMensaje(e.target.value)}
+          disabled={cargando}
+        />
+        <Button onClick={enviarMensaje} disabled={cargando}>
+          {cargando ? <Spinner size="sm" /> : "Enviar"}
+        </Button>
+      </Modal.Body>
+    </Modal>
   );
 };
 
