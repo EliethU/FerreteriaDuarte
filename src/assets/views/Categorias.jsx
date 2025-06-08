@@ -17,6 +17,7 @@ import TablaCategorias from "../components/categorias/TablaCategorias";
 import ModalRegistroCategoria from "../components/categorias/ModalRegistroCategoria";
 import ModalEdicionCategoria from "../components/categorias/ModalEdicionCategoria";
 import ModalEliminacionCategoria from "../components/categorias/ModalEliminacionCategoria";
+import ChatIA from "../components/chat/ChatIA";
 
 
 const Categorias = () => {
@@ -204,39 +205,50 @@ const Categorias = () => {
   };
 }, []);
 
+//Controlar apertura y cierre del modal del chat
+const [showChatModal, setShowChatModal] = useState(false);
+
   // Renderizado del componente
   return (
     <Container className="mt-5">
-      <br />
-      <h4>Gestión de Categorías</h4>
-      <Button className="mb-3" onClick={() => setShowModal(true)}>
-        Agregar categoría
-      </Button>
-      <TablaCategorias
-        categorias={categorias}
-        openEditModal={openEditModal}
-        openDeleteModal={openDeleteModal}
-      />
-      <ModalRegistroCategoria
-        showModal={showModal}
-        setShowModal={setShowModal}
-        nuevaCategoria={nuevaCategoria}
-        handleInputChange={handleInputChange}
-        handleAddCategoria={handleAddCategoria}
-      />
-      <ModalEdicionCategoria
-        showEditModal={showEditModal}
-        setShowEditModal={setShowEditModal}
-        categoriaEditada={categoriaEditada}
-        handleEditInputChange={handleEditInputChange}
-        handleEditCategoria={handleEditCategoria}
-      />
-      <ModalEliminacionCategoria
-        showDeleteModal={showDeleteModal}
-        setShowDeleteModal={setShowDeleteModal}
-        handleDeleteCategoria={handleDeleteCategoria}
-      />
-    </Container>
+  <br />
+  <h4>Gestión de Categorías</h4>
+
+  <Button className="mb-3" onClick={() => setShowModal(true)}>
+    Agregar categoría
+  </Button>
+  <Button className="mb-3 ms-2" variant="secondary" onClick={() => setShowChatModal(true)}>
+    Asistente IA
+  </Button>
+
+  <TablaCategorias
+    categorias={categorias}
+    openEditModal={openEditModal}
+    openDeleteModal={openDeleteModal}
+  />
+  <ModalRegistroCategoria
+    showModal={showModal}
+    setShowModal={setShowModal}
+    nuevaCategoria={nuevaCategoria}
+    handleInputChange={handleInputChange}
+    handleAddCategoria={handleAddCategoria}
+  />
+  <ModalEdicionCategoria
+    showEditModal={showEditModal}
+    setShowEditModal={setShowEditModal}
+    categoriaEditada={categoriaEditada}
+    handleEditInputChange={handleEditInputChange}
+    handleEditCategoria={handleEditCategoria}
+  />
+  <ModalEliminacionCategoria
+    showDeleteModal={showDeleteModal}
+    setShowDeleteModal={setShowDeleteModal}
+    handleDeleteCategoria={handleDeleteCategoria}
+  />
+
+  <ChatIA showChatModal={showChatModal} setShowChatModal={setShowChatModal} />
+</Container>
+
   );
 };
 
